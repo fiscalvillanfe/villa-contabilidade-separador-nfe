@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comparador de Notas de Entrada — Villa Contabilidade</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <main class="wrapper">
+    <header class="pagehead">
+      <h1>Comparador de Notas de Entrada</h1>
+      <p class="sub">Compare dois conjuntos de NF-e (ZIP ou XML soltos). O sistema verifica se o <strong>destinatário</strong> é o mesmo nas duas amostras e, se for, identifica notas <em>em comum</em> e <em>diferentes</em>.</p>
+    </header>
+
+    <section class="card">
+      <div class="upload-grid">
+        <label class="file" id="boxA">
+          <input id="filesA" type="file" multiple accept=".zip,.xml">
+          <span><strong>NOTAS DA EMPRESA</strong><br><small>Arraste ZIP/XML aqui ou clique</small></span>
+        </label>
+
+        <label class="file" id="boxB">
+          <input id="filesB" type="file" multiple accept=".zip,.xml">
+          <span><strong>NOTAS DO FSIST</strong><br><small>Arraste ZIP/XML aqui ou clique</small></span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="compareBtn" class="btn primary">Comparar</button>
+        <button id="resetBtn" class="btn secondary">Limpar</button>
+      </div>
+      <p id="warn" class="msg"></p>
+    </section>
+
+    <section id="summary" class="hidden">
+      <div class="card">
+        <h2>Resumo</h2>
+        <div class="stats-grid" id="stats"></div>
+        <div id="companyInfo" class="company-info"></div>
+      </div>
+
+      <div class="card">
+        <h2>Downloads</h2>
+        <div class="downloads">
+          <button id="dlCommon" class="btn primary" disabled>Notas em comum (ZIP)</button>
+          <button id="dlDiff" class="btn primary" disabled>Notas diferentes (ZIP)</button>
+          <button id="dlExcel" class="btn secondary" disabled>Download de relatório comparativo (Excel)</button>
+        </div>
+      </div>
+
+      <div class="card compact">
+        <h3>Notas em comum</h3>
+        <div id="tableCommon"></div>
+      </div>
+
+      <div class="card compact">
+        <h3>Notas diferentes</h3>
+        <div id="tableDiff"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

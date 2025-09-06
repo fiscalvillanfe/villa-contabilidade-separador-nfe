@@ -1,0 +1,52 @@
+:root{
+  --primary:#8B0000; --primary-hover:#B22222; --bg:#F7F7F7; --text:#333; --border:#DDD;
+  --radius:10px; --shadow:0 8px 24px rgba(0,0,0,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Segoe UI, Tahoma, Roboto, Arial, sans-serif;background:var(--bg);color:var(--text);line-height:1.35;}
+
+.wrapper{max-width:1080px;margin:28px auto;padding:0 16px}
+.pagehead h1{margin:0 0 6px;color:var(--primary)}
+.pagehead .sub{margin:0;color:#555}
+
+.card{
+  background:#fff;border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px;margin:18px 0;
+}
+.card.compact{padding:12px}
+
+h2,h3{margin:0 0 10px;color:var(--primary)}
+
+.btn{
+  border:none;border-radius:var(--radius);padding:11px 16px;cursor:pointer;
+  font-weight:600;transition:.2s ease;font-size:14px;
+}
+.btn.primary{background:var(--primary);color:#fff}
+.btn.primary:hover{background:var(--primary-hover)}
+.btn.secondary{background:#555;color:#fff}
+.btn.secondary:hover{background:#666}
+
+.upload-grid{display:grid;gap:14px;grid-template-columns:1fr;}
+@media(min-width:840px){.upload-grid{grid-template-columns:1fr 1fr}}
+
+.file{
+  position:relative;border:2px dashed var(--primary);border-radius:var(--radius);
+  padding:26px;text-align:center;color:var(--primary);transition:.2s ease;
+}
+.file:hover{background:rgba(139,0,0,.05);border-color:var(--primary-hover)}
+.file input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.file span{pointer-events:none;font-weight:600}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.msg{color:var(--primary);margin-top:10px;font-weight:600}
+
+.stats-grid{display:grid;gap:10px;grid-template-columns:repeat(5,minmax(160px,1fr));}
+.stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center}
+.company-info{margin-top:10px;font-size:14px}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+th{background:var(--primary);color:#fff}
+tbody tr:hover{background:rgba(139,0,0,.05)}
+
+.hidden{display:none}
