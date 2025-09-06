@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Comparador de Notas de Entrada — Villa Contabilidade</title>
 
-  <!-- Favicon adicionado -->
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="https://i.imgur.com/Gy7x9Xm.png">
 
   <link rel="stylesheet" href="style.css">
@@ -18,7 +18,7 @@
   <main class="wrapper">
     <header class="pagehead">
       <h1>Comparador de Notas de Entrada</h1>
-      <p class="sub">Compare dois conjuntos de NF-e (ZIP ou XML soltos). O sistema verifica se o <strong>destinatário</strong> é o mesmo nas duas amostras e, se for, identifica notas <em>em comum</em> e <em>diferentes</em>.</p>
+      <p class="sub">Compare dois conjuntos de NF-e (ZIP ou XML soltos). O sistema valida o <strong>destinatário</strong> e identifica notas <em>em comum</em> e <em>diferentes</em>.</p>
     </header>
 
     <section class="card">
@@ -37,6 +37,7 @@
       <div class="actions">
         <button id="compareBtn" class="btn primary">Comparar</button>
         <button id="resetBtn" class="btn secondary">Limpar</button>
+        <a class="btn secondary link" id="btnSefaz" href="https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=resumo&tipoConteudo=7PhJ+gAVw2g%3D" target="_blank" rel="noopener">Consulta NF-e (SEFAZ)</a>
       </div>
       <p id="warn" class="msg"></p>
     </section>
@@ -49,11 +50,13 @@
       </div>
 
       <div class="card">
-        <h2>Downloads</h2>
+        <h2>Ações</h2>
         <div class="downloads">
           <button id="dlCommon" class="btn primary" disabled>Notas em comum (ZIP)</button>
           <button id="dlDiff" class="btn primary" disabled>Notas diferentes (ZIP)</button>
-          <button id="dlExcel" class="btn secondary" disabled>Download de relatório comparativo (Excel)</button>
+          <button id="dlExcel" class="btn secondary" disabled>Relatório comparativo (Excel)</button>
+          <button id="viewDiffBtn" class="btn secondary" disabled>Visualizar notas diferentes (DANFE)</button>
+          <button id="dlHTML" class="btn secondary" disabled>Relatório detalhado (HTML)</button>
         </div>
       </div>
 
@@ -68,6 +71,20 @@
       </div>
     </section>
   </main>
+
+  <!-- Modal DANFE -->
+  <div id="danfeModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <h3>Notas diferentes — Visualização DANFE</h3>
+        <button id="closeDanfe" class="btn secondary sm">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <div id="danfeList"></div>
+        <p class="hint">Dica: clique em “Abrir DANFE” para ver a nota em uma nova aba pronta para impressão.</p>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
