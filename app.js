@@ -1,4 +1,4 @@
-// ===== Comparador de Notas de Entrada — com PDF de "Notas Diferentes" =====
+// ===== Comparador de Notas de Entrada — com DANFE Pro e PDF do cliente =====
 
 const el = id => document.getElementById(id);
 
@@ -62,6 +62,24 @@ function parseUF(inf, which){
   const uf = findPathLocal(inf, [base, 'ender' + (base==='emit'?'Emit':'Dest'), 'UF'])?.textContent || '';
   return (uf||'').trim().toUpperCase();
 }
+
+// Itens do XML (det/prod)
+function extractItems(inf){
+  const dets = byLocalNameAll(inf, 'det');
+  const rows = [];
+  for (const d of dets){
+    const prod = findPathLocal(d, ['prod']);
+    if (!prod) continue;
+    const xProd = findPathLocal(prod, ['xProd'])?.textContent || '';
+    const CFOP  = findPathLocal(prod, ['CFOP'])?.textContent || '';
+    const uCom  = findPathLocal(prod, ['uCom'])?.textContent || '';
+    const qCom  = findPathLocal(prod, ['qCom'])?.textContent || '';
+    const vProd = findPathLocal(prod, ['vProd'])?.textContent || '';
+    rows.push({ xProd, CFOP, uCom, qCom, vProd });
+  }
+  return rows;
+}
+
 function extractBasics(doc){
   const inf = pickInfNFe(doc);
   const key = getAccessKey(doc);
@@ -73,7 +91,8 @@ function extractBasics(doc){
   const dest = extractParty(inf, 'dest');
   const ufEmit = parseUF(inf, 'emit');
   const ufDest = parseUF(inf, 'dest');
-  return { key, nNF, serie, dhEmi, vNF, emit, dest, ufEmit, ufDest };
+  const dets = extractItems(inf);
+  return { key, nNF, serie, dhEmi, vNF, emit, dest, ufEmit, ufDest, dets };
 }
 
 // Carrega ZIPs e XMLs soltos
@@ -97,7 +116,7 @@ async function collectXMLs(fileList){
   return items;
 }
 
-// Tabela HTML
+// Tabela HTML para a tela
 function tableFromRows(header, rows){
   const thead = `<thead><tr>${header.map(h=>`<th>${h}</th>`).join('')}</tr></thead>`;
   const tbody = `<tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c??""}</td>`).join('')}</tr>`).join('')}</tbody>`;
@@ -135,10 +154,8 @@ function openClientPDFPreview(meta, diffRows){
   header img{ width:36px; height:36px; border-radius:8px; }
   header .title{ font-size:20px; font-weight:700; color:var(--primary); }
   .meta{ font-size:12px; color:var(--muted); margin-bottom:8px; }
-  .badge{ display:inline-block; padding:2px 8px; border-radius:999px; background:#f6e9ea; color:#7a1a1a; border:1px solid #e2bcbc; font-size:11px; }
   table{ width:100%; border-collapse:collapse; font-size:12px; }
   thead{ display: table-header-group; }
-  tfoot{ display: table-row-group; }
   tr{ page-break-inside: avoid; }
   th,td{ border-bottom:1px solid #eee; padding:6px 6px; text-align:left; }
   th{ background:var(--primary); color:#fff; }
@@ -172,8 +189,7 @@ function openClientPDFPreview(meta, diffRows){
   </header>
   <div class="meta">
     Empresa (destinatário): <strong>${meta.companyName}</strong> — ${meta.companyDoc}<br>
-    Gerado em: ${new Date().toLocaleString()} &nbsp;•&nbsp;
-    Total de notas diferentes: <strong>${rows.length}</strong>
+    Gerado em: ${new Date().toLocaleString()} • Total de notas diferentes: <strong>${rows.length}</strong>
   </div>
 
   <div class="section-title">Notas para conferência do cliente</div>
@@ -181,13 +197,155 @@ function openClientPDFPreview(meta, diffRows){
     <thead><tr>${headerCols.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
     <tbody>${bodyRows || `<tr><td colspan="9">Não há notas diferentes.</td></tr>`}</tbody>
   </table>
+  <script>
+    // Abre diálogo de impressão automaticamente
+    setTimeout(function(){ try{ window.focus(); window.print(); }catch(e){} }, 300);
+  </script>
 </body></html>`;
 
   const w = window.open('', '_blank');
   if (!w){ alert('Permita pop-ups para visualizar o PDF.'); return; }
   w.document.open(); w.document.write(html); w.document.close();
-  // abrir diálogo de impressão (o usuário escolhe "Salvar como PDF")
-  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(_){} }, 400);
+}
+
+// ---------- DANFE Pro ----------
+function danfeHTML(x){
+  // helpers
+  const fmtDoc = (d)=> {
+    const s = (d||'').replace(/\D+/g,'');
+    if (s.length===14) return s.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*$/,'$1.$2.$3/$4-$5'); // CNPJ
+    if (s.length===11) return s.replace(/^(\d{3})(\d{3})(\d{3})(\d{2}).*$/,'$1.$2.$3-$4'); // CPF
+    return d||'';
+  };
+  const money = (v)=> {
+    const n = Number(String(v).replace(',','.'));
+    if (Number.isFinite(n)) return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    return v||'';
+  };
+  const dateBr = (s)=>{
+    if (!s) return '';
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[2]}/${m[3]}/${m[1]}` : s;
+  };
+  const chave = digits(x.key||'');
+  const chaveFmt = chave.replace(/(\d{4})(?=\d)/g,'$1 ').trim();
+
+  const css = `
+  @page { size: A4; margin: 12mm; }
+  body{ font-family:Segoe UI, Tahoma, Roboto, Arial, sans-serif; color:#111; }
+  .box{ border:1px solid #000; border-radius:4px; padding:6px; margin-bottom:6px; }
+  .row{ display:flex; gap:6px; }
+  .col{ flex:1; }
+  h1{ font-size:18px; margin:0 0 4px; }
+  .muted{ color:#555; font-size:12px; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
+  table{ width:100%; border-collapse:collapse; font-size:12px; }
+  thead{ display:table-header-group; }
+  th,td{ border:1px solid #000; padding:4px 6px; }
+  th{ background:#eee; }
+  td.r{ text-align:right; }
+  td.c{ text-align:center; }
+  .barcode{ width:100%; height:52px; }
+  .logo{ width:48px; height:48px; border-radius:8px; }
+  .header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .header .left{ display:flex; align-items:center; gap:8px; }
+  `;
+
+  const itens = (x.dets||[]).map((d,i)=>`
+    <tr>
+      <td class="c">${i+1}</td>
+      <td>${(d.xProd||'')}</td>
+      <td class="c">${d.CFOP||''}</td>
+      <td class="c">${d.uCom||''}</td>
+      <td class="r">${(d.qCom||'')}</td>
+      <td class="r">${money(d.vProd||'')}</td>
+    </tr>
+  `).join('');
+
+  return `
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>DANFE — ${x.nNF}/${x.serie}</title>
+<style>${css}</style>
+</head>
+<body>
+  <div class="header">
+    <div class="left">
+      <img class="logo" src="https://i.imgur.com/kVJgNMN.png" alt="Logo">
+      <div>
+        <h1>DANFE — Documento Auxiliar da NF-e</h1>
+        <div class="muted">NF-e nº <strong>${x.nNF||''}</strong> — Série <strong>${x.serie||''}</strong> — Emissão <strong>${dateBr(x.dhEmi)||''}</strong></div>
+      </div>
+    </div>
+    <div class="right">
+      <svg id="barcode"></svg>
+    </div>
+  </div>
+
+  <div class="box">
+    <div><strong>Chave de Acesso:</strong> ${chaveFmt || '—'}</div>
+  </div>
+
+  <div class="grid2">
+    <div class="box">
+      <strong>Emitente</strong><br>
+      ${x.emit?.name||''}<br>
+      Doc: ${fmtDoc(x.emit?.doc||'')} • UF: ${x.ufEmit||''}
+    </div>
+    <div class="box">
+      <strong>Destinatário</strong><br>
+      ${x.dest?.name||''}<br>
+      Doc: ${fmtDoc(x.dest?.doc||'')} • UF: ${x.ufDest||''}
+    </div>
+  </div>
+
+  <div class="grid3">
+    <div class="box"><strong>Número</strong><br>${x.nNF||''}</div>
+    <div class="box"><strong>Série</strong><br>${x.serie||''}</div>
+    <div class="box"><strong>Valor Total</strong><br>${money(x.vNF||'')}</div>
+  </div>
+
+  <div class="box">
+    <strong>Itens da NF-e</strong>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Descrição</th><th>CFOP</th><th>Un</th><th>Qtd</th><th>Valor</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itens || '<tr><td colspan="6" class="c">Itens não informados no XML.</td></tr>'}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- JsBarcode CDN e impressão -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script>
+    (function(){
+      try{
+        var key = "${chave}";
+        if (key && window.JsBarcode){
+          JsBarcode("#barcode", key, {format:"CODE128", displayValue:false, height:48, margin:0});
+        }
+      }catch(e){}
+      setTimeout(function(){ try{ window.focus(); window.print(); }catch(_){} }, 400);
+    })();
+  </script>
+</body>
+</html>
+  `;
+}
+
+function openDANFEWindow(x){
+  const w = window.open("", "_blank");
+  if (!w){ alert("Permita pop-ups para visualizar o DANFE."); return; }
+  w.document.open();
+  w.document.write(danfeHTML(x));
+  w.document.close();
 }
 
 // ---------- Comparação ----------
@@ -243,7 +401,7 @@ async function compareSets(filesA, filesB){
   for (const [k] of mapA){ if (mapB.has(k)) commonKeys.push(k); else onlyA.push(k); }
   for (const [k] of mapB){ if (!mapA.has(k)) onlyB.push(k); }
 
-  // Linhas (detalhadas)
+  // Linhas (detalhadas) para as tabelas/relatórios
   const toRow = (x, origin) => [x.key, x.nNF, x.serie, x.dhEmi, x.vNF, x.emit.name, x.emit.doc, x.ufEmit, x.dest.name, x.dest.doc, x.ufDest, origin];
   const common = commonKeys.map(k => toRow(mapA.get(k) || mapB.get(k), "COMUM"));
   const diff   = [
@@ -320,87 +478,29 @@ async function compareSets(filesA, filesB){
   return {common, diff};
 }
 
-// ---------- DANFE (igual de antes) ----------
-function danfeHTML(x){
-  const fmt = (n)=> (n||"").toString();
-  const itens = []; // simplificado
-  const css = `
-    body{font-family:Segoe UI,Tahoma,Roboto,Arial,sans-serif;color:#222;margin:20px}
-    h1,h2{margin:6px 0}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .box{border:1px solid #ddd;border-radius:8px;padding:10px}
-    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
-    th,td{border-bottom:1px solid #eee;padding:6px;text-align:left}
-    th{background:#f6f6f6}
-    .right{text-align:right}
-    .muted{color:#666;font-size:12px}
-  `;
+// ---------- DANFE (lista e abertura) ----------
+function danfeCardHTML(x, label){
   return `
-<!doctype html><html><head><meta charset="utf-8"><title>DANFE — ${x.key}</title><style>${css}</style></head>
-<body>
-  <h1>DANFE (visualização)</h1>
-  <p class="muted">Representação simplificada para conferência/ impressão.</p>
-  <div class="grid">
-    <div class="box"><h2>Emitente</h2><div>${fmt(x.emit.name)} — ${fmt(x.emit.doc)} (UF: ${fmt(x.ufEmit)})</div></div>
-    <div class="box"><h2>Destinatário</h2><div>${fmt(x.dest.name)} — ${fmt(x.dest.doc)} (UF: ${fmt(x.ufDest)})</div></div>
-  </div>
-  <div class="box" style="margin-top:10px">
-    <strong>NF:</strong> ${fmt(x.nNF)} &nbsp; | &nbsp;
-    <strong>Série:</strong> ${fmt(x.serie)} &nbsp; | &nbsp;
-    <strong>Emissão:</strong> ${fmt(x.dhEmi)} &nbsp; | &nbsp;
-    <strong>Valor Total:</strong> R$ ${fmt(x.vNF)}
-  </div>
-  <div class="box" style="margin-top:10px">
-    <h2>Itens</h2>
-    <table>
-      <thead><tr><th>#</th><th>Descrição</th><th>CFOP</th><th>Un</th><th class="right">Qtd</th><th class="right">Valor</th></tr></thead>
-      <tbody>${itens.join('') || `<tr><td colspan="6" class="muted">Itens não informados no XML.</td></tr>`}</tbody>
-    </table>
-  </div>
-</body></html>`;
+    <div class="danfe-card">
+      <h4>${label} — Chave ${x.key}</h4>
+      <div class="meta"><span>NF: ${x.nNF}</span><span>Série: ${x.serie}</span><span>Emissão: ${x.dhEmi}</span><span>Valor: R$ ${x.vNF}</span></div>
+      <div class="row">
+        <button class="btn primary" data-key="${x.key}" data-side="${label==='SOMENTE_EMPRESA'?'A':'B'}">Abrir DANFE</button>
+        <a class="btn secondary" target="_blank" rel="noopener" href="https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=resumo&tipoConteudo=7PhJ+gAVw2g%3D">Consultar na SEFAZ</a>
+      </div>
+    </div>
+  `;
 }
-function openDANFEWindow(x){
-  const w = window.open("", "_blank");
-  if (!w){ alert("Permita pop-ups para visualizar o DANFE."); return; }
-  w.document.open();
-  w.document.write(danfeHTML(x));
-  w.document.close();
-}
+
 function showDanfeModal(){
   const modal = el('danfeModal');
   const listEl = el('danfeList');
   const { mapA, mapB, onlyA, onlyB } = (window.__cmp || {});
   if (!mapA || !mapB){ alert("Faça a comparação primeiro."); return; }
 
-  const cards = [];
-  for (const k of onlyA){
-    const x = mapA.get(k);
-    cards.push(`
-      <div class="danfe-card">
-        <h4>SOMENTE_EMPRESA — Chave ${x.key}</h4>
-        <div class="meta"><span>NF: ${x.nNF}</span><span>Série: ${x.serie}</span><span>Emissão: ${x.dhEmi}</span><span>Valor: R$ ${x.vNF}</span></div>
-        <div class="row">
-          <button class="btn primary" data-key="${x.key}" data-side="A">Abrir DANFE</button>
-          <a class="btn secondary" target="_blank" rel="noopener" href="https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=resumo&tipoConteudo=7PhJ+gAVw2g%3D">Consultar na SEFAZ</a>
-        </div>
-      </div>
-    `);
-  }
-  for (const k of onlyB){
-    const x = mapB.get(k);
-    cards.push(`
-      <div class="danfe-card">
-        <h4>SOMENTE_FSIST — Chave ${x.key}</h4>
-        <div class="meta"><span>NF: ${x.nNF}</span><span>Série: ${x.serie}</span><span>Emissão: ${x.dhEmi}</span><span>Valor: R$ ${x.vNF}</span></div>
-        <div class="row">
-          <button class="btn primary" data-key="${x.key}" data-side="B">Abrir DANFE</button>
-          <a class="btn secondary" target="_blank" rel="noopener" href="https://www.nfe.fazenda.gov.br/portal/consultaRecaptcha.aspx?tipoConsulta=resumo&tipoConteudo=7PhJ+gAVw2g%3D">Consultar na SEFAZ</a>
-        </div>
-      </div>
-    `);
-  }
-
-  listEl.innerHTML = `<div class="danfe-list">${cards.join('') || '<p>Nenhuma nota diferente encontrada.</p>'}</div>`;
+  const cardsA = onlyA.map(k => danfeCardHTML(mapA.get(k), 'SOMENTE_EMPRESA')).join('');
+  const cardsB = onlyB.map(k => danfeCardHTML(mapB.get(k), 'SOMENTE_FSIST')).join('');
+  listEl.innerHTML = `<div class="danfe-list">${cardsA}${cardsB || ''}</div>`;
   modal.classList.remove('hidden');
 
   listEl.querySelectorAll('button[data-key]').forEach(btn=>{
