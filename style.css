@@ -9,6 +9,14 @@ body{margin:0;font-family:Segoe UI, Tahoma, Roboto, Arial, sans-serif;background
 .pagehead h1{margin:0 0 6px;color:var(--primary)}
 .pagehead .sub{margin:0;color:#555}
 
+.topbar{
+  position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:10px 14px;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{width:28px;height:28px;border-radius:6px}
+.brand-title{color:var(--primary);font-weight:700}
+
 .card{
   background:#fff;border:1px solid var(--border);border-radius:var(--radius);
   box-shadow:var(--shadow);padding:18px;margin:18px 0;
@@ -25,7 +33,7 @@ h2,h3{margin:0 0 10px;color:var(--primary)}
 .btn.primary:hover{background:var(--primary-hover)}
 .btn.secondary{background:#555;color:#fff}
 .btn.secondary:hover{background:#666}
-.btn.secondary.sm{padding:8px 12px; font-size:12px}
+.btn.secondary.sm{padding:8px 12px;font-size:12px}
 .btn.link{text-decoration:none; display:inline-flex; align-items:center}
 
 .upload-grid{display:grid;gap:14px;grid-template-columns:1fr;}
@@ -53,7 +61,7 @@ tbody tr:hover{background:rgba(139,0,0,.05)}
 
 .hidden{display:none}
 
-/* ===== upload feedback (sem mexer no HTML) ===== */
+/* ===== upload feedback ===== */
 .file.dragover{
   background: rgba(139,0,0,.08);
   border-color: var(--primary-hover);
@@ -73,13 +81,23 @@ tbody tr:hover{background:rgba(139,0,0,.05)}
   content:""; position:absolute; right:10px; top:10px;
   width:14px; height:7px; border:3px solid #22c55e; border-top:0; border-right:0; transform: rotate(-45deg);
 }
-.file .file-meta{ margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px; }
+.file .file-meta{
+  margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px;
+}
 .file .name{
   max-width:90%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; color:#333;
 }
-.file .count{ font-size:12px; color:#666; padding:2px 6px; border:1px solid var(--border); border-radius:999px; background:#fff; }
+.file .count{
+  font-size:12px; color:#666; padding:2px 6px; border:1px solid var(--border);
+  border-radius:999px; background:#fff;
+}
 
-/* ===== Modal DANFE ===== */
+/* Progress */
+.progress{height:4px;background:#eee;border-radius:6px;overflow:hidden;margin-top:12px}
+.indeterminate{position:relative;height:100%;background:linear-gradient(90deg, rgba(139,0,0,.1), rgba(139,0,0,.6), rgba(139,0,0,.1));animation:ind 1.2s infinite}
+@keyframes ind{0%{left:-40% ;width:40%}50%{left:20%;width:60%}100%{left:100%;width:40%}}
+
+/* Modal DANFE */
 .modal{
   position:fixed; inset:0; background:rgba(0,0,0,.45);
   display:flex; align-items:center; justify-content:center; z-index:1000;
@@ -103,4 +121,3 @@ tbody tr:hover{background:rgba(139,0,0,.05)}
 .danfe-card .meta{ font-size:13px; color:#555; display:flex; gap:12px; flex-wrap:wrap; }
 .danfe-card .row{ display:flex; gap:8px; align-items:center; margin-top:8px; }
 .danfe-card .row .btn{ padding:8px 10px; }
-
